@@ -29,7 +29,6 @@ bfReduce (x:xs) = go 1 x xs
 
 -- Generates a valid, but not necessarily run-time safe, C program from reduced brainfuck code.
 reducedBrainfuckToC :: ReducedBrainfuck -> CProgram
-reducedBrainfuckToC [] = ""
 reducedBrainfuckToC rbf = "main(){char tape[32767];char *ptr=tape;" ++ code rbf ++ "return 0;}"
   where
     code [] = ""
