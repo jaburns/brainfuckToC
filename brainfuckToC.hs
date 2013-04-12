@@ -13,41 +13,38 @@ type CProgram = String                -- String alias to represent a C program.
 -- Given some input string, this function will return a new string containing only the valid BrainFuck instructions.
 bfClean :: String -> BrainfuckProgram
 bfClean "" = ""
-bfClean (x:xs) = if elem x "><+-,.[]"
-               then x:(bfClean xs)
-               else    bfClean xs
+bfClean (x:xs) | elem x "><+-,.[]" = x:(bfClean xs)
+               | otherwise         =    bfClean xs
                
 -- Groups strings of the same brainfuck characters together and returns the character/count pairs.
 bfReduce :: BrainfuckProgram -> ReducedBrainfuck
 bfReduce "" = []
 bfReduce (x:xs) = go 1 x xs
   where
-    go acc char   []   = [(acc,char)]
-    go acc char (x:xs) = if x == char
-                       then go (acc+1) char xs
-                       else (acc,char):( go 1 x xs )
+    go acc char [] = [(acc,char)]
+    go acc char (x:xs) | x == char = go (acc+1) char xs
+                       | otherwise = (acc,char):( go 1 x xs )
 
 -- Generates a valid, but not necessarily run-time safe, C program from reduced brainfuck code.
 reducedBrainfuckToC :: ReducedBrainfuck -> CProgram
-reducedBrainfuckToC rbf = "main(){char tape[32767];char *ptr=tape;" ++ code rbf ++ "return 0;}"
+reducedBrainfuckToC rbf = "main(){char a[32767];char*p=a;" ++ code rbf ++ "return 0;}"
   where
     code [] = ""
     code ((n,cmd):xs) =
       case cmd of
-        '>' -> "ptr+="  ++ goNextNumerical
-        '<' -> "ptr-="  ++ goNextNumerical
-        '+' -> "*ptr+=" ++ goNextNumerical
-        '-' -> "*ptr-=" ++ goNextNumerical
-        '.' -> "putchar(*ptr);"  ++ consumedOne
-        ',' -> "*ptr=getchar();" ++ consumedOne
-        '[' -> "while(*ptr){"    ++ consumedOne
-        ']' -> "}"               ++ consumedOne
+        '>' -> "p+="  ++ goNextNumerical
+        '<' -> "p-="  ++ goNextNumerical
+        '+' -> "*p+=" ++ goNextNumerical
+        '-' -> "*p-=" ++ goNextNumerical
+        '.' -> "putchar(*p);"  ++ consumedOne
+        ',' -> "*p=getchar();" ++ consumedOne
+        '[' -> "while(*p){"    ++ consumedOne
+        ']' -> "}"             ++ consumedOne
         _   -> consumedOne
       where
         goNextNumerical = show n ++ ";" ++ code xs
-        consumedOne = if n == 1
-                    then code xs
-                    else code ((n-1,cmd):xs)
+        consumedOne | n == 1    = code xs
+                    | otherwise = code ((n-1,cmd):xs)
                 
 -- Main: process the file provided as a parameter and output to stdout, or tell the user no parameter was passed.
 main = do
